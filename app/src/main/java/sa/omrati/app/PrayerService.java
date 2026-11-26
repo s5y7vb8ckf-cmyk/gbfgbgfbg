@@ -27,12 +27,13 @@ public class PrayerService extends Service implements LocationListener {
   if(Build.VERSION.SDK_INT>=26){nm.createNotificationChannel(new NotificationChannel("location_active","متابعة الموقع",NotificationManager.IMPORTANCE_LOW));nm.createNotificationChannel(new NotificationChannel("prayer_times","الصلاة والأذان والإقامة",NotificationManager.IMPORTANCE_HIGH));}
   PendingIntent stop=PendingIntent.getService(this,1,new Intent(this,PrayerService.class).setAction("stop"),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
   try {startForeground(51,builder("location_active").setSmallIcon(android.R.drawable.ic_menu_mylocation).setContentTitle("عُمرتي • متابعة الموقع").setContentText("حساب مواقيت الصلاة محليًا").setOngoing(true).setContentIntent(open()).addAction(android.R.drawable.ic_menu_close_clear_cancel,"إيقاف",stop).build());}catch(Exception e){prefs.edit().putBoolean("enabled",false).apply();stopSelf();return START_NOT_STICKY;}
-  prefs.edit().putBoolean("enabled",true).apply();
+  prefs.edit().putBoolean("enabled",true).remove("fix").apply();
   manager.removeUpdates(this);
-  for(String provider:new String[]{LocationManager.GPS_PROVIDER,LocationManager.NETWORK_PROVIDER})try{if(manager.isProviderEnabled(provider)){Location l=manager.getLastKnownLocation(provider);if(l!=null&&System.currentTimeMillis()-l.getTime()<300000&&(last==null||l.getTime()>last.getTime()))last=l;manager.requestLocationUpdates(provider,30000,20,this);}}catch(Exception ignored){}
-  handler.removeCallbacks(tick);handler.post(tick);return START_STICKY;
+  for(String provider:new String[]{LocationManager.GPS_PROVIDER,LocationManager.NETWORK_PROVIDER})try{if(manager.isProviderEnabled(provider)){Location l=manager.getLastKnownLocation(provider);if(l!=null&&System.currentTimeMillis()-l.getTime()<300000&&(last==null||l.getTime()>last.getTime()))last=l;manager.requestLocationUpdates(provider,2000,0,this);}}catch(Exception ignored){}
+  if(last!=null)publish(last);handler.removeCallbacks(tick);handler.post(tick);return START_STICKY;
  }
- @Override public void onLocationChanged(Location l){last=l;check();}
+ @Override public void onLocationChanged(Location l){last=l;publish(l);check();}
+ private void publish(Location l){prefs.edit().putString("fix",l.getLatitude()+","+l.getLongitude()+","+l.getAccuracy()+","+l.getTime()).apply();}
  @Override public void onProviderEnabled(String p){}
  @Override public void onProviderDisabled(String p){}
  @Override public void onStatusChanged(String p,int s,Bundle b){}
@@ -52,5 +53,5 @@ public class PrayerService extends Service implements LocationListener {
   prefs.edit().putString("schedule",schedule.toString()).putLong("updated",System.currentTimeMillis()).apply();
  }
  private void sendOnce(String key,String title,String text,int id){if(prefs.getString("sent"+id,"").equals(key))return;if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)return;NotificationManager nm=getSystemService(NotificationManager.class);if(!nm.areNotificationsEnabled())return;nm.notify(id,builder("prayer_times").setSmallIcon(android.R.drawable.ic_dialog_info).setContentTitle(title).setContentText(text).setStyle(new Notification.BigTextStyle().bigText(text)).setDefaults(Notification.DEFAULT_ALL).setContentIntent(open()).setAutoCancel(true).build());prefs.edit().putString("sent"+id,key).apply();}
- @Override public void onDestroy(){handler.removeCallbacks(tick);if(manager!=null)manager.removeUpdates(this);stopForeground(true);super.onDestroy();}
+ @Override public void onDestroy(){prefs.edit().putBoolean("enabled",false).remove("fix").apply();handler.removeCallbacks(tick);if(manager!=null)manager.removeUpdates(this);stopForeground(true);super.onDestroy();}
 }

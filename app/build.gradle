@@ -2,6 +2,6 @@ plugins { id 'com.android.application' }
 android {
  namespace 'sa.omrati.app'
  compileSdk 35
- defaultConfig { applicationId 'sa.omrati.app'; minSdk 24; targetSdk 34; versionCode 13; versionName "2.1" }
+ defaultConfig { applicationId 'sa.omrati.app'; minSdk 24; targetSdk 34; versionCode 14; versionName "2.2" }
 }
 dependencies { implementation 'androidx.webkit:webkit:1.12.1' }
