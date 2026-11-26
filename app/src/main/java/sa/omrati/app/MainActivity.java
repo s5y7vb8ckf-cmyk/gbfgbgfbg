@@ -2,7 +2,7 @@ package sa.omrati.app;
 import android.Manifest;
 import android.hardware.*;
 import android.view.Surface;
-import android.location.GeomagneticField;
+import android.hardware.GeomagneticField;
 import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
